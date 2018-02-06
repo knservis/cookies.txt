@@ -1,46 +1,54 @@
 // See http://www.cookiecentral.com/faq/#3.5
-var content = "";
-var downloadable = "";
-var popup = "";
-chrome.tabs.getSelected(null, function(tab) {
-  domain = getDomain(tab.url)  
-  //console.log("domain=["+domain+"]")
-  chrome.cookies.getAll({}, function(cookies) {
+
+if (document.currentScript.getAttribute("from_menu") == "true") {
+  chrome.tabs.getSelected(null, function(tab) {
+
+    chrome.cookies.getAll({}, function(cookies) {
+      message = getMessage(tab.url, cookies)
+      document.write("<pre>\n"+ message + "</pre>");
+    });
+  })
+}
+else {
+  // Assuming context menu call here
+  chrome.contextMenus.create({
+    title: "cUrly link",
+    contexts: ["link"],
+    onclick: showLink
+  });
+}
+
+function showLink(info, tab) {
+  var link = info['linkUrl']
+    chrome.cookies.getAll({}, function(cookies) {
+      message = getMessage(link, cookies)
+      // document.write("<pre>\n"+ message + "</pre>");
+      var sandbox = document.getElementById('sandbox');
+      sandbox.value = message;
+      sandbox.select();
+      document.execCommand("copy")
+      console.log(message);
+      sandbox.value = '';
+    });
+}
+
+function getMessage(url, cookies) {
+  var domain = getDomain(url)
+  var cookies_kv = "";
+  var command = "";
+  var popup = "";
     for (var i in cookies) {
-      cookie = cookies[i]; 
-      if (cookie.domain.indexOf(domain) != -1) {     
-      content += escapeForPre(cookie.domain);
-      content += "\t";
-      content += escapeForPre((!cookie.hostOnly).toString().toUpperCase());
-      content += "\t";     
-      content += escapeForPre(cookie.path); 
-      content += "\t";     
-      content += escapeForPre(cookie.secure.toString().toUpperCase());
-      content += "\t";     
-      content += escapeForPre(cookie.expirationDate ? Math.round(cookie.expirationDate) : "0");
-      content += "\t";     
-      content += escapeForPre(cookie.name);
-      content += "\t";     
-      content += escapeForPre(cookie.value);
-      content += "\n";
+      cookie = cookies[i];
+      if (cookie.domain.indexOf(domain) != -1) {
+        cookies_kv += escapeForPre(cookie.name);
+        cookies_kv += "=";
+        cookies_kv += escapeForPre(cookie.value);
+        cookies_kv += "; ";
       }
     }
-    downloadable += "# HTTP Cookie File for domains related to " + escapeForPre(domain) + ".\n";
-    downloadable += "# Downloaded with cookies.txt Chrome Extension (" + escapeForPre("https://chrome.google.com/webstore/detail/njabckikapfpffapmjgojcnbfjonfjfg") + ")\n";
-    downloadable += "# Example:  wget -x --load-cookies cookies.txt " + escapeForPre(tab.url) + "\n"; 
-    downloadable += "#\n"; 
-
-    var uri = "data:application/octet-stream;base64,"+btoa(downloadable + content);
-    var a = '<a href='+ uri +' download="cookies.txt">downloaded</a>';
-
-    popup += "# HTTP Cookie File for domains related to <b>" + escapeForPre(domain) + "</b>.\n";
-    popup += "# This content may be "+ a +" or pasted into a cookies.txt file and used by wget\n";
-    popup += "# Example:  wget -x <b>--load-cookies cookies.txt</b> " + escapeForPre(tab.url) + "\n"; 
-    popup += "#\n";
-
-    document.write("<pre>\n"+ popup + content + "</pre>");
-  });      
-})
+    command += "curl -L -O --cookie \"" + cookies_kv + "\" " + escapeForPre(url) ;
+    return command;
+}
 
 function escapeForPre(text) {
   return String(text).replace(/&/g, "&amp;")
@@ -51,14 +59,9 @@ function escapeForPre(text) {
 }
 
 function getDomain(url) {
-  //console.log("url=["+url+"]")
   server = url.match(/:\/\/(.[^/:#?]+)/)[1];
-  //console.log("server=["+server+"]")
   parts = server.split(".");
-  //console.log("parts=["+parts+"]")
-
   isip = !isNaN(parseInt(server.replace(".",""),10));
-  //console.log("parts=["+isip+"]")
 
   if (parts.length <= 1 || isip)   {
     domain = server;
@@ -67,14 +70,11 @@ function getDomain(url) {
     //search second level domain suffixes
     var domains = new Array();
     domains[0] = parts[parts.length-1];
-    //assert(parts.length > 1)
     for(i=1;i<parts.length;i++)     {
       domains[i] = parts[parts.length-i-1] + "." + domains[i-1];
-      //console.log("domains=["+domains[i]+"]");
       //domainlist defines in domain_list.js 
       if (!domainlist.hasOwnProperty(domains[i])) {
         domain = domains[i];
-        //console.log("found "+domain);
         break;
       }
     }
@@ -83,6 +83,5 @@ function getDomain(url) {
       domain = server;
     }
   }
-  
   return domain;
 }

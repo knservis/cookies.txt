@@ -1,7 +1,4 @@
-Allows users to export their session cookie data from Chrome to a legacy
-Netscape/Mozilla file format so wget (and other tools) can use it. This
-allows wget to continue a possibly authenticated session that was
-started in a Chrome.
+Gets you the curl command including cookies to download the current page or a link (via the context menu)
 
 The extension can be downloaded for **free** on [Google Chrome WebStore][1]
 
