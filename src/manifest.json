@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "cUrly links",
-  "version": "1.0",
+  "version": "1.1",
   "description": "Gets a curl command with cookies form a link or page",
   "short_name": "curly",
   "offline_enabled": true,

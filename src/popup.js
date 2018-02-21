@@ -46,7 +46,7 @@ function getMessage(url, cookies) {
         cookies_kv += "; ";
       }
     }
-    command += "curl -L -O --cookie \"" + cookies_kv + "\" " + escapeForPre(url) ;
+    command += "curl -L -O --cookie '" + cookies_kv + "' " + escapeForPre(url) ;
     return command;
 }
 
